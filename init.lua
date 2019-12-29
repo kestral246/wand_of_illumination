@@ -5,9 +5,11 @@
 -- Provides a wand that when used lights up an entire room, but only for a moment.
 
 local brightness_value = 9  -- How bright to make lights.
-local MAX_DIST_SQUARED = 15^2  -- Radius of sphere (squared).
-local maxcount = 15000		-- Maximum number of nodes to check.
-local mana_cost = 100
+local NORMAL_RADIUS_SQUARED = 15^2  -- Radius of sphere (squared).
+local NORMAL_COST = 100
+local EXTENDED_RADIUS_SQUARED = 30^2
+local EXTENDED_COST = 200
+local maxcount = 120000		-- Maximum number of nodes to check.
 
 local using_mana = false
 if minetest.get_modpath("mana") ~= nil then
@@ -110,34 +112,44 @@ local check_node = function(pname, pos, origin, maxdist2)
 	end
 end
 
-local use_wand = function(pname, pos)
-	-- Initialize temporary tables for safety.
-	scanned[pname] = {}
-	tocheck[pname] = {}
-	tolight[pname] = {}
-	-- Search starts at wand position.
-	table.insert(tocheck[pname], minetest.hash_node_position(pos))
-	local count = 1
-	while count <= table.getn(tocheck[pname]) and count <= maxcount do
-		check_node(pname, minetest.get_position_from_hash(tocheck[pname][count]),
-			pos, MAX_DIST_SQUARED)  -- fifo
-		count = count + 1
+local use_wand = function(player)
+	local pname = player:get_player_name()
+	local pos = vector.add(vector.round(player:get_pos()), {x=0,y=1,z=0})  -- position of wand
+	local key_stats = player:get_player_control()
+	local radius2 = NORMAL_RADIUS_SQUARED  -- normal
+	local cost = NORMAL_COST
+	if key_stats.sneak or key_stats.aux1 then  -- extended
+		radius2 = EXTENDED_RADIUS_SQUARED
+		cost = EXTENDED_COST
 	end
-	count = count - 1 
-	local toadd = tlength(tolight[pname])
-	-- Print statistics.
-	--minetest.debug("wand_of_illumination: y = "..tostring(pos.y)..", scan = "..
-	--		tostring(tlength(scanned[pname]))..", check = "..tostring(count)..", lights = "..
-	--		tostring(tlength(tolight[pname])))
-	-- Add lights to all locations flagged for lighting.
-	for _,v in ipairs(tolight[pname]) do
-		local fpos = minetest.get_position_from_hash(v)
-		minetest.set_node(fpos, {name="wand_of_illumination:light"})
+	if mana_check(player, cost) then
+		-- Initialize temporary tables for safety.
+		scanned[pname] = {}
+		tocheck[pname] = {}
+		tolight[pname] = {}
+		-- Search starts at wand position.
+		table.insert(tocheck[pname], minetest.hash_node_position(pos))
+		local count = 1
+		while count <= table.getn(tocheck[pname]) and count <= maxcount do
+			check_node(pname, minetest.get_position_from_hash(tocheck[pname][count]), pos, radius2)
+			count = count + 1
+		end
+		count = count - 1 
+		local toadd = tlength(tolight[pname])
+		-- Print statistics.
+		--minetest.debug("wand_of_illumination: y = "..tostring(pos.y)..", scan = "..
+		--		tostring(tlength(scanned[pname]))..", check = "..tostring(count)..", lights = "..
+		--		tostring(tlength(tolight[pname])))
+		-- Add lights to all locations flagged for lighting.
+		for _,v in ipairs(tolight[pname]) do
+			local fpos = minetest.get_position_from_hash(v)
+			minetest.set_node(fpos, {name="wand_of_illumination:light"})
+		end
+		-- Clear temporary tables, which could be large.
+		scanned[pname] = {}
+		tocheck[pname] = {}
+		tolight[pname] = {}
 	end
-	-- Clear temporary tables, which could be large.
-	scanned[pname] = {}
-	tocheck[pname] = {}
-	tolight[pname] = {}
 end
 
 minetest.register_tool("wand_of_illumination:wand", {
@@ -145,17 +157,9 @@ minetest.register_tool("wand_of_illumination:wand", {
 	inventory_image = "wand_of_illumination.png",
 	stack_max = 1,
 	on_place = function(itemstack, player, pointed_thing)
-		local pname = player:get_player_name()
-		local pos = vector.add(vector.round(player:get_pos()), {x=0,y=1,z=0})  -- position of wand
-		if mana_check(player, mana_cost) then
-			use_wand(pname, pos)
-		end
+		use_wand(player)
 	end,
 	on_secondary_use = function(itemstack, player, pointed_thing)
-		local pname = player:get_player_name()
-		local pos = vector.add(vector.round(player:get_pos()), {x=0,y=1,z=0})  -- position of wand
-		if mana_check(player, mana_cost) then
-			use_wand(pname, pos)
-		end
+		use_wand(player)
 	end,
 })
