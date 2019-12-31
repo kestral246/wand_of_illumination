@@ -1,0 +1,6 @@
+# This file contains settings for wand_of_illumination that can be changed in
+# minetest.conf
+
+#    Optionally use ABM instead of default node_timers.
+#    (default = false)
+wand_illum_use_abm (Use ABM for light decay) bool false

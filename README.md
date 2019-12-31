@@ -12,7 +12,7 @@ Features
 - On right click, places an array of invisible light nodes around the player, in a sphere with a current radius of 15 nodes, and with a light spacing of four nodes.
 - **New:** On shift-right-click (or aux-right-click), creates an extended sphere of light with a radius of 30 nodes.
 - Scans only through air, and only replaces air nodes.
-- Uses an abm to cause these light nodes to revert back to air nodes after a short amount of time.
+- **Update** Uses node_timers to cause these light nodes to revert back to air nodes after a short amount of time. (However, I left the ABM in as a config option.)
 - **Update:** Uses mana mod if available. Current cost for use is 100 mana (normal), or 200 mana (extended).
 - Note that narrow passages, like dungeon corridors, may not light up, if they don't fall on the 4x light spacing grid.
 
@@ -22,7 +22,7 @@ WIP—Things that still need to be done.
 ----------------------------------
 
 - Come up with a crafting recipe.
-- Determine if I should be using an abm or something else.
+- **(Done)** Determine if I should be using an abm or something else.
 - Optimize mana cost.
 - Tune light generated: brightness, spacing, radius, and decay rate.
 - Come up with a better wand texture.

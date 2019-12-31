@@ -1,24 +1,34 @@
 -- Wand of Illumination [wand_of_illumination]
 -- by David G (kestral246@gmail.com)
--- 2019-12-28
+-- 2019-12-31
 
 -- Provides a wand that when used lights up an entire room, but only for a moment.
 
-local brightness_value = 9  -- How bright to make lights.
+local brightness_value = 10  -- How bright to make lights.
 local NORMAL_RADIUS_SQUARED = 15^2  -- Radius of sphere (squared).
 local NORMAL_COST = 100
 local EXTENDED_RADIUS_SQUARED = 30^2
 local EXTENDED_COST = 200
-local maxcount = 120000		-- Maximum number of nodes to check.
+local maxcount = 120000  -- Maximum number of nodes to check ((4/3)*pi*r^3).
+
+-- Setting to allow optional use of ABM for light decay.
+-- Make sure all lights have faded before disabling this option.
+local use_abm = minetest.settings:get_bool("wand_illum_use_abm", false)
+if use_abm then
+	minetest.log("warning", "Wand of Illumination using ABM for light decay.")
+end
+
+-- Set to true to print debug statistics.
+local debug = false
 
 local using_mana = false
 if minetest.get_modpath("mana") ~= nil then
 	using_mana = true
 end
 
-local scanned = {}			-- Set containing scanned nodes, so they don't get scanned multiple times.
-local tocheck = {}			-- Table of nodes to check.
-local tolight = {}			-- Table of nodes that need to be converted to fill lights.
+local scanned = {}  -- Set containing scanned nodes, so they don't get scanned multiple times.
+local tocheck = {}  -- Table of nodes to check.
+local tolight = {}  -- Table of nodes that need to be converted to fill lights.
 
 minetest.register_on_joinplayer(function(player)
 	local pname = player:get_player_name()
@@ -59,16 +69,21 @@ minetest.register_node("wand_of_illumination:light", {
 	buildable_to = true,
 	drops = "",
 	groups = {cracky = 3, oddly_breakable_by_hand = 3, fill_hidden = 1, not_in_creative_inventory = 1},
+	on_timer = function(pos)  -- use node timer
+		minetest.remove_node(pos)
+	end,
 })
 
-minetest.register_abm({
-	nodenames = {"wand_of_illumination:light"},
-	interval = 2.0,  -- need to tune
-	chance = 10,  -- need to tune
-	action = function(pos, node, active_object_count, active_object_count_wider)
-		minetest.set_node(pos, {name = "air"})
-	end
-})
+if use_abm then  -- optional ABM
+	minetest.register_abm({
+		nodenames = {"wand_of_illumination:light"},
+		interval = 2.0,  -- need to tune
+		chance = 10,  -- need to tune
+		action = function(pos, node, active_object_count, active_object_count_wider)
+			minetest.set_node(pos, {name = "air"})
+		end
+	})
+end
 
 -- Determine number of elements in table, for summary output.
 local tlength = function(T)
@@ -83,7 +98,7 @@ end
 
 -- Scan neighboring nodes, flag for checking if air.
 local scan_node = function(pname, pos, origin, maxdist2)
-	-- Add y to test, so make search pattern a sphere
+	-- Add y to test, so make search pattern a sphere.
 	if square(pos.x - origin.x) + square(pos.y - origin.y) + square(pos.z - origin.z) <= maxdist2 then
 		local enc_pos = minetest.hash_node_position(pos)
 		if scanned[pname][enc_pos] ~= true then  -- hasn't been scanned
@@ -136,14 +151,19 @@ local use_wand = function(player)
 		end
 		count = count - 1 
 		local toadd = tlength(tolight[pname])
-		-- Print statistics.
-		--minetest.debug("wand_of_illumination: y = "..tostring(pos.y)..", scan = "..
-		--		tostring(tlength(scanned[pname]))..", check = "..tostring(count)..", lights = "..
-		--		tostring(tlength(tolight[pname])))
+		if debug then  -- print statistics
+			minetest.debug("wand_of_illumination: y = "..tostring(pos.y)..", scan = "..
+				tostring(tlength(scanned[pname]))..", check = "..tostring(count)..", lights = "..
+				tostring(tlength(tolight[pname])))
+		end
 		-- Add lights to all locations flagged for lighting.
 		for _,v in ipairs(tolight[pname]) do
 			local fpos = minetest.get_position_from_hash(v)
 			minetest.set_node(fpos, {name="wand_of_illumination:light"})
+			if not use_abm then
+				local timer = minetest.get_node_timer(fpos)  -- use node timer
+				timer:set(math.random(60), 0)
+			end
 		end
 		-- Clear temporary tables, which could be large.
 		scanned[pname] = {}
