@@ -1,6 +1,6 @@
 -- Wand of Illumination [wand_of_illumination]
 -- by David G (kestral246@gmail.com)
--- 2019-12-31
+-- 2020-01-28
 
 -- Provides a wand that when used lights up an entire room, but only for a moment.
 
@@ -122,7 +122,8 @@ local check_node = function(pname, pos, origin, maxdist2)
 	scan_node(pname, vector.add(pos, {x=0,y=-1,z=0}), origin, maxdist2)  -- down
 	scan_node(pname, vector.add(pos, {x=0,y=1,z=0}), origin, maxdist2)  -- up
 	if name == "air" and ((pos.x%4 == 0 and pos.y%8 == 0 and pos.z%4 == 0) or
-			(pos.x%4 == 2 and pos.y%8 == 4 and pos.z%4 == 2)) then
+			(pos.x%4 == 2 and pos.y%8 == 4 and pos.z%4 == 2))
+			and minetest.get_node_light(pos) < brightness_value then
 		table.insert(tolight[pname], enc_pos)
 	end
 end

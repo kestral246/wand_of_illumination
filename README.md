@@ -10,10 +10,10 @@ Features
 --------
 
 - On right click, places an array of invisible light nodes around the player, in a sphere with a current radius of 15 nodes, and with a light spacing of four nodes.
-- **New:** On shift-right-click (or aux-right-click), creates an extended sphere of light with a radius of 30 nodes.
-- Scans only through air, and only replaces air nodes.
-- **Update** Uses node_timers to cause these light nodes to revert back to air nodes after a short amount of time. (However, I left the ABM in as a config option.)
-- **Update:** Uses mana mod if available. Current cost for use is 100 mana (normal), or 200 mana (extended).
+- On shift-right-click (or aux-right-click), creates an extended sphere of lights with a radius of 30 nodes.
+- **New:** Doesn't place lights where already brightly lit.
+- Uses node_timers to cause these light nodes to revert back to air nodes after a short amount of time. (However, I left the ABM in as a config option.)
+- Uses mana mod if available. Current cost for use is 100 mana (normal), or 200 mana (extended).
 - Note that narrow passages, like dungeon corridors, may not light up, if they don't fall on the 4x light spacing grid.
 
 
