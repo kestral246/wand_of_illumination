@@ -18,7 +18,7 @@ Features
 - On shift-**left**-click (or aux-**left**-click), creates an extended sphere of lights with a radius of 30 nodes.
 - Doesn't place lights where already brightly lit.
 - Uses node_timers to cause these light nodes to gradually fade away.
-- **New:** Wear added, so wand and fill-light only work for a limited number of uses. (Currently 20 normal uses, or 10 extended uses.)
+- **New:** Wear added, so wand and flash-lamp only work for a limited number of uses. (Currently 20 normal uses, or 10 extended uses.)
 - Uses mana mod for wand if available. Current cost for use is 100 mana (normal), or 200 mana (extended).
 
 *(Note that narrow passages, like dungeon corridors, may not light up, if they don't fall on the 4x light spacing grid.)*
