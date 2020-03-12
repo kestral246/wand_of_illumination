@@ -2,7 +2,7 @@ Wand of Illumination [wand\_of\_illumination]
 ===========================================
 Provides a wand that when used, lights up an entire room—but only for a moment.
 
-Alternatively, provides a 1900-era flash-lamp, for those without a sense of magic.
+Alternatively, provides a 1900-era flash-lamp, and a futuristic super-lamp for those without a sense of magic.
 
 
 ![Wand of Illumination Screenshot](compare.gif "Torch vs Normal vs Extended Range")
@@ -12,13 +12,12 @@ Alternatively, provides a 1900-era flash-lamp, for those without a sense of magi
 Features
 --------
 
-- **New:** Now with choice of original magic wand or new 1900-era flash-lamp.
-- **New:** Changed activation to standard left-click.
-- On **left** click, places a sphere of invisible lights around the player with a radius of 15 nodes.
-- On shift-**left**-click (or aux-**left**-click), creates an extended sphere of lights with a radius of 30 nodes.
+- **New:** Choice of original magic wand, 1900-era flash-lamp, or mese-powered super-lamp.
+- On **left** click, places a sphere of invisible lights around the player.
+- On shift-**left**-click (or aux-**left**-click), creates an extended sphere of lights.
 - Doesn't place lights where already brightly lit.
 - Uses node_timers to cause these light nodes to gradually fade away.
-- **New:** Wear added, so wand and flash-lamp only work for a limited number of uses. (Currently 20 normal uses, or 10 extended uses.)
+- Wear added, so all lamps will only work for a limited number of uses.
 - Uses mana mod for wand if available. Current cost for use is 100 mana (normal), or 200 mana (extended).
 
 *(Note that narrow passages, like dungeon corridors, may not light up, if they don't fall on the 4x light spacing grid.)*
@@ -28,11 +27,11 @@ Features
 WIP—Things that still need to be done.
 ----------------------------------
 
-- Come up with a crafting recipe. **(Done)** for flash-lamp.
-- Optimize number of uses before wearing out.
+- Come up with a crafting recipes. **(Updated)**
+- Optimize number of uses before wearing out. **(Updated)**
 - Optimize mana cost.
-- Tune light generated: brightness, spacing, radius, and decay rate.
-- Come up with a better textures.
+- Tune light generated: brightness, spacing, radius, and decay rate. **(Updated)**
+- Come up with better textures. **(Updated)**
 
 
 Note about number of lights used
@@ -55,18 +54,15 @@ Here's a screenshot with r=15 and r=50 (using meselamps to make the lights visib
 Dependencies
 ------------
 
-- Craft recipe for flash-lamp needs default and tnt mods.
-- Craft recipe for wand still TBD.
-- Optionally depends on Wuzzy's mana mod, for wand.
+- Craft recipes need default and tnt mods.
+- Optionally depends on Wuzzy's mana mod.
+- 
 
-Craft Recipe
-------------
+Craft Recipes
+-------------
 
-wand = TBD
+*See code for now.*
 
-flash-lamp = 
-
-![Flash-Lamp Craft Recipe](crafting2.png "Flash-Lamp Craft Recipe")
 
 Licenses
 --------

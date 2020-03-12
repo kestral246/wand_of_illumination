@@ -1,18 +1,20 @@
 -- Wand of Illumination [wand_of_illumination]
 -- by David G (kestral246@gmail.com)
--- 2020-02-10
+-- 2020-02-14
 
 -- Provides a wand that when used lights up an entire room, but only for a moment.
--- Also provides a flash-lamp for those without magic.
+-- Also provides a flash-lamp and a super-lamp for those without magic.
 
-local brightness_value = 10  -- How bright to make lights.
-local NORMAL_RADIUS_SQUARED = 15^2  -- Radius of sphere (squared).
-local NORMAL_COST = 100
-local NORMAL_USES = 20
-local EXTENDED_RADIUS_SQUARED = 30^2
-local EXTENDED_COST = 200
-local EXTENDED_USES = 10
-local maxcount = 120000  -- Maximum number of nodes to check ((4/3)*pi*r^3).
+-- How bright to make lights
+-- For reference, the default:torch has a brightness of 12.
+local brightness_value = 11
+local darken_torches = false
+
+-- Maximum number of nodes to check ((4/3)*pi*r^3).
+local maxcount = 180000  -- corresponds to r_max = 35
+
+-- The wear, mana, and radius can now be set independently for each lamp tool.
+-- For extended range, all of these values are doubled.
 
 -- Setting to allow optional use of ABM for light decay.
 -- Make sure all lights have faded before disabling this option.
@@ -28,6 +30,19 @@ local debug = false
 local using_mana_mod = false
 if minetest.get_modpath("mana") ~= nil then
 	using_mana_mod = true
+end
+
+-- Optionally darken default torches, to make lamps more valuable.
+if darken_torches then
+	minetest.override_item("default:torch", {
+		light_source = 8
+	})
+	minetest.override_item("default:torch_wall", {
+		light_source = 8
+	})
+	minetest.override_item("default:torch_ceiling", {
+		light_source = 8
+	})
 end
 
 local scanned = {}  -- Set containing scanned nodes, so they don't get scanned multiple times.
@@ -48,9 +63,9 @@ minetest.register_on_leaveplayer(function(player)
 	tolight[pname] = nil
 end)
 
-local mana_check = function(player, cost, use_mana)
+local mana_check = function(player, cost)
 	local allowed
-	if use_mana then
+	if cost > 0 then
 		if using_mana_mod then
 			if mana.subtract(player:get_player_name(), cost) then
 				allowed = true
@@ -136,19 +151,19 @@ local check_node = function(pname, pos, origin, maxdist2)
 	end
 end
 
-local use_wand = function(player, itemstack, use_mana)
+local use_wand = function(player, itemstack, radius, wear, mana)
 	local pname = player:get_player_name()
 	local pos = vector.add(vector.round(player:get_pos()), {x=0,y=1,z=0})  -- position of wand
 	local key_stats = player:get_player_control()
-	local radius2 = NORMAL_RADIUS_SQUARED  -- normal
-	local cost = NORMAL_COST
-	local wear = math.floor(65535/NORMAL_USES)
+	local radius2 = radius * radius  -- normal
+	local wear_cost = wear
+	local mana_cost = mana
 	if key_stats.sneak or key_stats.aux1 then  -- extended
-		radius2 = EXTENDED_RADIUS_SQUARED
-		cost = EXTENDED_COST
-		wear = math.floor(65535/EXTENDED_USES)
+		radius2 = 3 * radius2  -- now trying 1.732x
+		wear_cost = 2 * wear_cost
+		mana_cost = 2 * mana_cost
 	end
-	if mana_check(player, cost, use_mana) then
+	if mana_check(player, mana_cost) then
 		-- Initialize temporary tables for safety.
 		scanned[pname] = {}
 		tocheck[pname] = {}
@@ -181,7 +196,7 @@ local use_wand = function(player, itemstack, use_mana)
 		tocheck[pname] = {}
 		tolight[pname] = {}
 		-- Add wear to wand
-		itemstack:add_wear(wear)
+		itemstack:add_wear(wear_cost)
 		return itemstack
 	end
 end
@@ -191,8 +206,10 @@ minetest.register_tool("wand_of_illumination:wand", {
 	inventory_image = "wand_of_illumination.png",
 	stack_max = 1,
 	on_use = function(itemstack, player, pointed_thing)
-		local use_mana = true
-		local worn_item = use_wand(player, itemstack, use_mana)
+		local radius = 15  -- or 26
+		local wear = math.floor(65535/25)
+		local mana = 100
+		local worn_item = use_wand(player, itemstack, radius, wear, mana)
 		return worn_item
 	end,
 })
@@ -202,20 +219,68 @@ minetest.register_tool("wand_of_illumination:flash_lamp", {
 	inventory_image = "flash_lamp.png",
 	stack_max = 1,
 	on_use = function(itemstack, player, pointed_thing)
-		local use_mana = false
-		local worn_item = use_wand(player, itemstack, use_mana)
+		local radius = 10  -- or 17.3
+		local wear = math.floor(65535/15)
+		local mana = 0
+		local worn_item = use_wand(player, itemstack, radius, wear, mana)
 		return worn_item
 	end,
 })
 
+minetest.register_tool("wand_of_illumination:super_lamp", {
+	description = "Super Lamp",
+	inventory_image = "super_lamp.png",
+	stack_max = 1,
+	on_use = function(itemstack, player, pointed_thing)
+		local radius = 20  -- or 34.6
+		local wear = math.floor(65535/40)
+		local mana = 0
+		local worn_item = use_wand(player, itemstack, radius, wear, mana)
+		return worn_item
+	end,
+})
+
+-- Need default for crafting recipe.
+-- Example craft recipe for wand.
+if minetest.get_modpath("default") ~= nil then
+	minetest.register_craft({
+		output = "wand_of_illumination:wand",
+		recipe = {
+			{"default:mese_crystal"},
+			{"group:stick"}
+		}
+	})
+end
+
 -- Need default and tnt mods for crafting recipe.
+-- Add copper or tin to make harder to craft.
 if minetest.get_modpath("default") ~= nil and minetest.get_modpath("tnt") ~= nil then
 	minetest.register_craft({
 		output = "wand_of_illumination:flash_lamp",
 		recipe = {
 			{"tnt:gunpowder", "tnt:gunpowder", "tnt:gunpowder"},
-			{"", "group:stick", ""},
+			{"", "default:tin_ingot", ""},
 			{"", "group:stick", ""}
+		}
+	})
+	minetest.register_craft({
+		output = "wand_of_illumination:flash_lamp",
+		recipe = {
+			{"tnt:gunpowder", "tnt:gunpowder", "tnt:gunpowder"},
+			{"", "default:copper_ingot", ""},
+			{"", "group:stick", ""}
+		}
+	})
+end
+
+-- Need default for crafting recipe.
+if minetest.get_modpath("default") ~= nil then
+	minetest.register_craft({
+		output = "wand_of_illumination:super_lamp",
+		recipe = {
+			{"default:meselamp", "default:obsidian", "default:meselamp"},
+			{"default:obsidian", "default:meselamp", "default:obsidian"},
+			{"default:meselamp", "default:obsidian", "default:meselamp"}
 		}
 	})
 end
