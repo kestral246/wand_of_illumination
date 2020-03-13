@@ -1,8 +1,8 @@
 Wand of Illumination [wand\_of\_illumination]
 ===========================================
-Provides a wand that when used, lights up an entire room—but only for a moment.
+Provides a wand that when used, lights up what's in front—but only for a moment.
 
-Alternatively, provides a 1900-era flash-lamp, and a futuristic super-lamp for those without a sense of magic.
+Alternatively, provides a 1900-era flash\_lamp and a futuristic super\_lamp, for those without a sense of magic.
 
 
 ![Wand of Illumination Screenshot](compare.gif "Torch vs Normal vs Extended Range")
@@ -12,16 +12,16 @@ Alternatively, provides a 1900-era flash-lamp, and a futuristic super-lamp for t
 Features
 --------
 
-- **New:** Choice of original magic wand, 1900-era flash-lamp, or mese-powered super-lamp.
-- On **left** click, places a sphere of invisible lights around the player.
-- On shift-**left**-click (or aux-**left**-click), creates an extended sphere of lights.
+- **New:** Now just lights up 120° in direction player is pointed.
+- **New:** Choice of original magic wand, 1900-era flash\_lamp, or mese-powered super\_lamp.
+- On **left** click, places a cone of invisible lights in front of the player.
+- On shift-**left**-click (or aux-**left**-click), creates an extended cone of lights.
 - Doesn't place lights where already brightly lit.
 - Uses node_timers to cause these light nodes to gradually fade away.
 - Wear added, so all lamps will only work for a limited number of uses.
 - Uses mana mod for wand if available. Current cost for use is 100 mana (normal), or 200 mana (extended).
 
 *(Note that narrow passages, like dungeon corridors, may not light up, if they don't fall on the 4x light spacing grid.)*
-
 
 
 WIP—Things that still need to be done.
@@ -36,6 +36,9 @@ WIP—Things that still need to be done.
 
 Note about number of lights used
 --------------------------------
+
+**Note:** *These numbers were for a full sphere. For r=40 and a 120° cone of light, only 67000 nodes are scanned, and 1044 lights are placed.*
+
 To allow this mod to light up all the narrow twisty tunnels underground, the spacing of the lights placed needs to be as small as possible. However, I also want to minimize how many lights this mod places.  With testing, a spacing of four seemed to give light coverage in most tunnels, with just a few that were too narrow to have any lights.
 
 However, with the fixed spacing I'm using, this still adds up to a large number of lights. I did some tests in the sky, which gives the worst case numbers:
@@ -54,9 +57,9 @@ Here's a screenshot with r=15 and r=50 (using meselamps to make the lights visib
 Dependencies
 ------------
 
-- Craft recipes need default and tnt mods.
 - Optionally depends on Wuzzy's mana mod.
-- 
+- Optionally depends on default and tnt mods to enable craft recipes.
+
 
 Craft Recipes
 -------------

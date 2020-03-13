@@ -1,17 +1,17 @@
 -- Wand of Illumination [wand_of_illumination]
 -- by David G (kestral246@gmail.com)
--- 2020-02-14
+-- 2020-03-12
 
--- Provides a wand that when used lights up an entire room, but only for a moment.
--- Also provides a flash-lamp and a super-lamp for those without magic.
+-- Lights up what's in front, but only for a moment.
+-- Provides a wand, flash_lamp, and super_lamp.
 
--- How bright to make lights
+-- How bright and wide to make lights.
 -- For reference, the default:torch has a brightness of 12.
 local brightness_value = 11
-local darken_torches = false
+local light_cone = math.pi/3  -- corresponds to 120°
 
--- Maximum number of nodes to check ((4/3)*pi*r^3).
-local maxcount = 180000  -- corresponds to r_max = 35
+-- Maximum number of nodes to check (use debug to determine).
+local maxcount = 100000
 
 -- The wear, mana, and radius can now be set independently for each lamp tool.
 -- For extended range, all of these values are doubled.
@@ -30,19 +30,6 @@ local debug = false
 local using_mana_mod = false
 if minetest.get_modpath("mana") ~= nil then
 	using_mana_mod = true
-end
-
--- Optionally darken default torches, to make lamps more valuable.
-if darken_torches then
-	minetest.override_item("default:torch", {
-		light_source = 8
-	})
-	minetest.override_item("default:torch_wall", {
-		light_source = 8
-	})
-	minetest.override_item("default:torch_ceiling", {
-		light_source = 8
-	})
 end
 
 local scanned = {}  -- Set containing scanned nodes, so they don't get scanned multiple times.
@@ -115,14 +102,12 @@ local tlength = function(T)
 	return count
 end
 
-local square = function(x)
-	return x * x
-end
-
 -- Scan neighboring nodes, flag for checking if air.
-local scan_node = function(pname, pos, origin, maxdist2)
-	-- Add y to test, so make search pattern a sphere.
-	if square(pos.x - origin.x) + square(pos.y - origin.y) + square(pos.z - origin.z) <= maxdist2 then
+local scan_node = function(pname, pos, origin, vdir, maxdist)
+	-- Update to send out a cone of light in direction pointed.
+	-- Need small sphere to get cone of light out.
+	local radius = vector.distance(origin, pos)
+	if radius <= 2 or (radius <= maxdist and vector.angle(vdir, vector.direction(origin, pos)) < light_cone) then
 		local enc_pos = minetest.hash_node_position(pos)
 		if scanned[pname][enc_pos] ~= true then  -- hasn't been scanned
 			local name = minetest.get_node(pos).name
@@ -135,15 +120,15 @@ local scan_node = function(pname, pos, origin, maxdist2)
 end
 
 -- To check, scan all neighbors and determine if this node needs to be converted to light.
-local check_node = function(pname, pos, origin, maxdist2)
+local check_node = function(pname, pos, origin, vdir, maxdist)
 	local enc_pos = minetest.hash_node_position(pos)
 	local name = minetest.get_node(pos).name
-	scan_node(pname, vector.add(pos, {x=0,y=0,z=1}), origin, maxdist2)  -- north
-	scan_node(pname, vector.add(pos, {x=1,y=0,z=0}), origin, maxdist2)  -- east
-	scan_node(pname, vector.add(pos, {x=0,y=0,z=-1}), origin, maxdist2)  -- south
-	scan_node(pname, vector.add(pos, {x=-1,y=0,z=0}), origin, maxdist2)  -- west
-	scan_node(pname, vector.add(pos, {x=0,y=-1,z=0}), origin, maxdist2)  -- down
-	scan_node(pname, vector.add(pos, {x=0,y=1,z=0}), origin, maxdist2)  -- up
+	scan_node(pname, vector.add(pos, {x=0,y=0,z=1}), origin, vdir, maxdist)  -- north
+	scan_node(pname, vector.add(pos, {x=1,y=0,z=0}), origin, vdir, maxdist)  -- east
+	scan_node(pname, vector.add(pos, {x=0,y=0,z=-1}), origin, vdir, maxdist)  -- south
+	scan_node(pname, vector.add(pos, {x=-1,y=0,z=0}), origin, vdir, maxdist)  -- west
+	scan_node(pname, vector.add(pos, {x=0,y=-1,z=0}), origin, vdir, maxdist)  -- down
+	scan_node(pname, vector.add(pos, {x=0,y=1,z=0}), origin, vdir, maxdist)  -- up
 	if name == "air" and ((pos.x%4 == 0 and pos.y%8 == 0 and pos.z%4 == 0) or
 			(pos.x%4 == 2 and pos.y%8 == 4 and pos.z%4 == 2))
 			and minetest.get_node_light(pos) < brightness_value then
@@ -154,12 +139,16 @@ end
 local use_wand = function(player, itemstack, radius, wear, mana)
 	local pname = player:get_player_name()
 	local pos = vector.add(vector.round(player:get_pos()), {x=0,y=1,z=0})  -- position of wand
+	local theta = math.fmod(player:get_look_horizontal() + math.pi/2, 2*math.pi)
+	local phi = player:get_look_vertical() + math.pi/2
+	local vdir = vector.normalize({x=math.sin(phi)*math.cos(theta), y=math.cos(phi), z=math.sin(phi)*math.sin(theta)})
+	-- For debug only.
+	--minetest.chat_send_player(pname, "theta = "..tostring(theta)..", phi = "..tostring(phi)..", vdir = "..tostring(minetest.serialize(vdir)))
 	local key_stats = player:get_player_control()
-	local radius2 = radius * radius  -- normal
 	local wear_cost = wear
 	local mana_cost = mana
 	if key_stats.sneak or key_stats.aux1 then  -- extended
-		radius2 = 3 * radius2  -- now trying 1.732x
+		radius = 2 * radius
 		wear_cost = 2 * wear_cost
 		mana_cost = 2 * mana_cost
 	end
@@ -172,11 +161,10 @@ local use_wand = function(player, itemstack, radius, wear, mana)
 		table.insert(tocheck[pname], minetest.hash_node_position(pos))
 		local count = 1
 		while count <= table.getn(tocheck[pname]) and count <= maxcount do
-			check_node(pname, minetest.get_position_from_hash(tocheck[pname][count]), pos, radius2)
+			check_node(pname, minetest.get_position_from_hash(tocheck[pname][count]), pos, vdir, radius)
 			count = count + 1
 		end
 		count = count - 1 
-		local toadd = tlength(tolight[pname])
 		if debug then  -- print statistics
 			minetest.debug("wand_of_illumination: y = "..tostring(pos.y)..", scan = "..
 				tostring(tlength(scanned[pname]))..", check = "..tostring(count)..", lights = "..
@@ -206,7 +194,7 @@ minetest.register_tool("wand_of_illumination:wand", {
 	inventory_image = "wand_of_illumination.png",
 	stack_max = 1,
 	on_use = function(itemstack, player, pointed_thing)
-		local radius = 15  -- or 26
+		local radius = 15  -- or 30
 		local wear = math.floor(65535/25)
 		local mana = 100
 		local worn_item = use_wand(player, itemstack, radius, wear, mana)
@@ -219,7 +207,7 @@ minetest.register_tool("wand_of_illumination:flash_lamp", {
 	inventory_image = "flash_lamp.png",
 	stack_max = 1,
 	on_use = function(itemstack, player, pointed_thing)
-		local radius = 10  -- or 17.3
+		local radius = 10  -- or 20
 		local wear = math.floor(65535/15)
 		local mana = 0
 		local worn_item = use_wand(player, itemstack, radius, wear, mana)
@@ -232,7 +220,7 @@ minetest.register_tool("wand_of_illumination:super_lamp", {
 	inventory_image = "super_lamp.png",
 	stack_max = 1,
 	on_use = function(itemstack, player, pointed_thing)
-		local radius = 20  -- or 34.6
+		local radius = 20  -- or 40
 		local wear = math.floor(65535/40)
 		local mana = 0
 		local worn_item = use_wand(player, itemstack, radius, wear, mana)
