@@ -5,7 +5,7 @@ Provides a wand that when used, lights up what's in front—but only for a momen
 Alternatively, provides a 1900-era flash\_lamp and a futuristic super\_lamp, for those without a sense of magic.
 
 
-![Wand of Illumination Screenshot](compare.gif "Torch vs Normal vs Extended Range")
+![Wand of Illumination Screenshot](images/compare.gif "Torch vs Normal vs Extended Range")
 
 **Picture:** Torch vs Normal vs Extended Range (smooth lighting off)
 
@@ -51,7 +51,7 @@ On my five-year-old computer, even this last test case only takes a few seconds 
 
 Here's a screenshot with r=15 and r=50 (using meselamps to make the lights visible):
 
-![Example of light patterns](15vs50.png "15 vs. 50")
+![Example of light patterns](images/15vs50.png "15 vs. 50")
 
 
 Dependencies
@@ -64,8 +64,11 @@ Dependencies
 Craft Recipes
 -------------
 
-*See code for now.*
+![Crafting 1](images/crafting1.png "Wand")
+![Crafting 2](images/crafting2.png "Flash Lamp")
 
+![Crafting 3](images/crafting3.png "Flash Lamp alt")
+![Crafting 4](images/crafting4.png "Super Lamp")
 
 Licenses
 --------
